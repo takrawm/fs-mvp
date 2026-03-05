@@ -361,6 +361,23 @@ PL / BS / CF の区分を示す。
 type AccountType = "PL" | "BS" | "CF";
 ```
 
+#### AccountSide（値オブジェクト / Union型）
+
+借方 / 貸方の区分を示す。
+
+```typescript
+type AccountSide = "DEBIT" | "CREDIT";
+```
+
+| AccountType | Side | 例 |
+|---|---|---|
+| PL | CREDIT | 売上高（収益） |
+| PL | DEBIT | 売上原価、販管費（費用） |
+| BS | DEBIT | 現金、固定資産（資産） |
+| BS | CREDIT | 買掛金、借入金（負債）、純資産 |
+| CF | DEBIT | 営業CF増加項目 |
+| CF | CREDIT | 営業CF減少項目 |
+
 #### Account（エンティティ）
 
 1つの勘定科目を表すエンティティ。
@@ -370,19 +387,25 @@ class Account {
   readonly code: AccountCode;
   readonly name: AccountName;
   readonly type: AccountType;
+  readonly side: AccountSide;                    // 借方/貸方
   readonly parentCode: AccountCode | null;       // null = ルート科目
   readonly sortOrder: number;
+  readonly isStructural: boolean;                // 構造科目フラグ
 
   static create(params: {
     code: string;
     name: string;
     type: AccountType;
+    side: AccountSide;
     parentCode: string | null;
     sortOrder: number;
+    isStructural?: boolean;                      // デフォルト: false
   }): Account;
 
+  get aggregationSign(): 1 | -1;                 // DEBIT → +1, CREDIT → -1
   isRoot(): boolean;                             // parentCode === null
   belongsTo(type: AccountType): boolean;
+  changeParent(newParentCode: AccountCode | null): Account;  // 構造科目はエラー
 }
 ```
 
@@ -405,6 +428,11 @@ class AccountHierarchy {
   isLeaf(code: AccountCode): boolean;                    // 葉科目かどうか
   getDepth(code: AccountCode): number;                   // 階層の深さ（ルート=0）
   toSorted(): Account[];                                 // sortOrder順のフラット配列
+  getAllAccounts(): Account[];                            // 全科目の配列
+
+  // 構造変更メソッド（新しい AccountHierarchy を返す）
+  insertParentAbove(newParent: Account, childCodes: AccountCode[]): AccountHierarchy;
+  addChildrenTo(targetCode: AccountCode, newChildren: Account[]): AccountHierarchy;
 
   private detectCycle(): void;                           // 循環参照時にエラーをスロー
 }

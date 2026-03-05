@@ -84,6 +84,73 @@ export class AccountHierarchy {
     return [...this.accounts.values()];
   }
 
+  insertParentAbove(
+    newParent: Account,
+    childCodes: AccountCode[],
+  ): AccountHierarchy {
+    if (this.accounts.has(newParent.code.value)) {
+      throw new Error(`Account "${newParent.code.value}" already exists`);
+    }
+
+    const children = childCodes.map((code) => this.getByCode(code));
+
+    const firstParentCode = children[0].parentCode?.value ?? null;
+    for (const child of children) {
+      const parentValue = child.parentCode?.value ?? null;
+      if (parentValue !== firstParentCode) {
+        throw new Error("All children must have the same parentCode");
+      }
+    }
+
+    for (const child of children) {
+      if (child.isStructural) {
+        throw new Error(
+          `Cannot change parentCode of structural account "${child.code.value}"`,
+        );
+      }
+    }
+
+    const childCodeSet = new Set(childCodes.map((c) => c.value));
+    const newAccounts: Account[] = [];
+
+    for (const account of this.accounts.values()) {
+      if (childCodeSet.has(account.code.value)) {
+        newAccounts.push(account.changeParent(newParent.code));
+      } else {
+        newAccounts.push(account);
+      }
+    }
+
+    newAccounts.push(newParent);
+
+    return AccountHierarchy.build(newAccounts);
+  }
+
+  addChildrenTo(
+    targetCode: AccountCode,
+    newChildren: Account[],
+  ): AccountHierarchy {
+    this.getByCode(targetCode);
+
+    if (!this.isLeaf(targetCode)) {
+      throw new Error(`Account "${targetCode.value}" is not a leaf account`);
+    }
+
+    for (const child of newChildren) {
+      if (this.accounts.has(child.code.value)) {
+        throw new Error(`Account "${child.code.value}" already exists`);
+      }
+      if (child.parentCode?.value !== targetCode.value) {
+        throw new Error(
+          `Child account "${child.code.value}" must have parentCode "${targetCode.value}"`,
+        );
+      }
+    }
+
+    const newAccounts = [...this.accounts.values(), ...newChildren];
+    return AccountHierarchy.build(newAccounts);
+  }
+
   private detectCycle(accounts: Account[]): void {
     const visited = new Set<string>();
     const inStack = new Set<string>();
