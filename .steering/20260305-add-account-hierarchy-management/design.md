@@ -11,7 +11,7 @@
 |---|---|---|
 | `packages/domain/src/account/Account.ts` | 修正 | `isStructural` プロパティ追加 |
 | `packages/domain/src/account/Account.test.ts` | 修正 | `isStructural` のテスト追加 |
-| `packages/domain/src/account/AccountHierarchy.ts` | 修正 | `groupUnderNewParent()`, `splitAccount()` 追加 |
+| `packages/domain/src/account/AccountHierarchy.ts` | 修正 | `insertParentAbove()`, `addChildrenTo()` 追加 |
 | `packages/domain/src/account/AccountHierarchy.test.ts` | 修正 | 新メソッドのテスト追加 |
 | `docs/functional-design.md` | 修正 | Account, AccountHierarchy のクラス設計更新 |
 
@@ -52,15 +52,15 @@ class Account {
 - `isStructural` は省略可能（`?`）にし、既存の `Account.create()` 呼び出しに影響を与えない
 - `Object.freeze(this)` で不変性を保つ（既存パターンと同じ）
 
-### 2.2 Account の `withParentCode()` メソッド追加
+### 2.2 Account の `changeParent()` メソッド追加
 
-`groupUnderNewParent()` の内部で既存 Account の `parentCode` を変更した新しいインスタンスを生成する必要がある。Account はイミュータブルなので、コピーメソッドを追加する。
+`insertParentAbove()` の内部で既存 Account の `parentCode` を変更した新しいインスタンスを生成する必要がある。Account はイミュータブルなので、コピーメソッドを追加する。
 
 ```typescript
 class Account {
   // ...既存メソッド...
 
-  withParentCode(newParentCode: AccountCode | null): Account;
+  changeParent(newParentCode: AccountCode | null): Account;
 }
 ```
 
@@ -71,13 +71,13 @@ class Account {
 
 ### 2.3 AccountHierarchy への変更操作メソッド追加
 
-#### `groupUnderNewParent()` — 親科目の追加
+#### `insertParentAbove()` — 既存科目の上に親科目を挿入
 
 ```typescript
 class AccountHierarchy {
   // ...既存メソッド...
 
-  groupUnderNewParent(
+  insertParentAbove(
     newParent: Account,
     childCodes: AccountCode[],
   ): AccountHierarchy;
@@ -95,7 +95,7 @@ class AccountHierarchy {
 
 2. 新しい Account 配列の構築
    ├─ newParent を追加（parentCode = childCodes の元の parentCode）
-   ├─ childCodes の各 Account を withParentCode(newParent.code) で再生成
+   ├─ childCodes の各 Account を changeParent(newParent.code) で再生成
    └─ その他の Account はそのまま
 
 3. AccountHierarchy.build() で新しいインスタンスを構築
@@ -111,13 +111,13 @@ class AccountHierarchy {
 | childCodes の parentCode が不一致 | `All children must have the same parentCode` |
 | childCodes に構造科目が含まれる | `Cannot change parentCode of structural account "${code}"` |
 
-#### `splitAccount()` — LEAF科目の分割
+#### `addChildrenTo()` — LEAF科目に子科目を追加
 
 ```typescript
 class AccountHierarchy {
   // ...既存メソッド...
 
-  splitAccount(
+  addChildrenTo(
     targetCode: AccountCode,
     newChildren: Account[],
   ): AccountHierarchy;
@@ -203,10 +203,10 @@ class AccountHierarchy {
 |---|---|
 | `isStructural: true` で作成 | `account.isStructural === true` |
 | `isStructural` 省略で作成 | `account.isStructural === false` |
-| 構造科目に `withParentCode()` | エラースロー |
-| 非構造科目に `withParentCode()` | 新しい Account が返る |
+| 構造科目に `changeParent()` | エラースロー |
+| 非構造科目に `changeParent()` | 新しい Account が返る |
 
-### 4.2 AccountHierarchy — groupUnderNewParent テスト
+### 4.2 AccountHierarchy — insertParentAbove テスト
 
 | テストケース | 期待結果 |
 |---|---|
@@ -217,7 +217,7 @@ class AccountHierarchy {
 | 構造科目を childCodes に指定 | エラースロー |
 | 元の AccountHierarchy が不変 | 元のインスタンスは変更なし |
 
-### 4.3 AccountHierarchy — splitAccount テスト
+### 4.3 AccountHierarchy — addChildrenTo テスト
 
 | テストケース | 期待結果 |
 |---|---|
