@@ -44,15 +44,57 @@ Phase 1 の以下のパッケージが実装・テスト済みであること：
 - **period パッケージ:** Period, FiscalYearSetting, Periods
 - **money パッケージ:** Money, GrowthRate, Ratio
 
-## 4. ユーザーストーリー
+## 4. 実績値と予測値の区分
+
+### 4.1 実績期間のデータ保護
+
+インポートされた実績値（actual values）は計算エンジンによる自動計算の対象外とする。
+
+- 実績期間の値は `ConstantNode` として登録され、ルールによる上書きは行われない
+- 実績値の変更はユーザーによる手動編集のみを許可する（Phase 4 以降の UI スコープ）
+- `AstEngine.registerRules()` は予測期間（forecast periods）に対してのみルールから FormulaNode を構築する
+
+### 4.2 ルール適用範囲
+
+```
+期間軸:  [実績1期] [実績2期] | [予測1期] [予測2期] [予測3期]
+                              ↑ 境界
+実績期間: ConstantNode（インポート値をそのまま保持）
+予測期間: Rule.buildFormulaNode() で AST ノードを構築 → 自動計算
+```
+
+- 予測ルール（forecast_rules）は予測期間にのみ適用される
+- 予測期間の最初の期（予測1期）が前期値を参照する場合、実績最終期の ConstantNode を参照する
+- SumRule 等の集約ルールは実績・予測の区分に関係なく、子ノードの値を合算する（子ノード自体が ConstantNode か計算ノードかは問わない）
+
+### 4.3 キャッシュ戦略
+
+計算エンジンでは 2 層のキャッシュを使用する。
+
+#### ノードレベルキャッシュ（EvaluationCache — Phase 2 スコープ）
+
+- 1 回の `compute()` 呼び出し内で、同一ノードの重複評価を防ぐメモ化キャッシュ
+- `evaluate()` 時にキャッシュヒットすれば再計算をスキップし、キャッシュ済みの値を返す
+- `compute()` 実行のたびに `clear()` してから再評価する（差分計算は行わない）
+- ConstantNode（実績値）もキャッシュ対象とし、参照時の一貫性を保つ
+
+#### 永続キャッシュ（computed_values テーブル — Phase 4 スコープ）
+
+- 計算結果を DB に保存し、再計算なしでの表示を可能にする
+- ルールや実績値が変更された場合は再計算を実行して更新する
+- Phase 2 のスコープ外だが、EvaluationCache の設計はこの拡張を阻害しないようにする
+
+## 5. ユーザーストーリー
 
 1. **開発者として**、各計算ルールが `buildFormulaNode()` で正しい AST ノードを構築し、期待通りの計算結果を返すことを単体テストで確認できる
 2. **開発者として**、AstEngine に複数のルールと実績値を登録し、依存関係に従って全科目・全期間の値が正しく算出されることを確認できる
 3. **開発者として**、循環依存が存在する場合にエラーが検出され、関与する科目がエラーメッセージに含まれることを確認できる
+4. **開発者として**、実績値が計算実行後も変更されず、インポート時の値がそのまま保持されることを確認できる
+5. **開発者として**、予測期間のみにルールが適用され、実績期間にはルールが適用されないことを確認できる
 
-## 5. 受け入れ条件
+## 6. 受け入れ条件
 
-### 5.1 FormulaNode 階層
+### 6.1 FormulaNode 階層
 
 - [ ] FormulaNode インターフェースが `nodeId`, `evaluate()`, `getDependencies()` を定義していること
 - [ ] FormulaNodeRef インターフェースが `accountCode`, `period`, `resolve()` を定義していること
@@ -64,33 +106,35 @@ Phase 1 の以下のパッケージが実装・テスト済みであること：
 - [ ] NegateNode が符号反転した値を返すこと
 - [ ] 各ノードの `evaluate()` が EvaluationCache を参照してメモ化すること
 
-### 5.2 EvaluationCache
+### 6.2 EvaluationCache
 
 - [ ] nodeId をキーとして Money を保存・取得できること
 - [ ] `has()` でキャッシュの存在判定ができること
 - [ ] `clear()` でキャッシュを全消去できること
 
-### 5.3 NodeRegistry
+### 6.3 NodeRegistry
 
 - [ ] FormulaNode を登録し、nodeId で取得できること
 - [ ] `getOrCreate()` で既存ノードがあればそれを返し、なければファクトリで生成して登録すること
 - [ ] `buildNodeId()` が AccountCode と Period からユニークな ID を生成すること
 
-### 5.4 DependencyGraph
+### 6.4 DependencyGraph
 
 - [ ] NodeRegistry から依存グラフを構築できること
 - [ ] Kahn のアルゴリズム（入次数ベース）でトポロジカルソートを提供すること
 - [ ] 循環依存を検出し、関与する AccountCode の配列を返すこと
 
-### 5.5 AstEngine
+### 6.5 AstEngine — 実績値の保護
 
-- [ ] `registerRules()` で全ルール × 全期間の FormulaNode を構築・登録できること
-- [ ] 実績値が ConstantNode として登録されること
+- [ ] `registerRules()` が実績期間の値を ConstantNode として登録すること
+- [ ] `registerRules()` が予測期間に対してのみルールから FormulaNode を構築すること
+- [ ] 実績期間に対してルールが適用されないこと（ConstantNode が上書きされないこと）
+- [ ] `compute()` 実行後、実績値がインポート時の値と一致すること
 - [ ] `compute()` がトポロジカルソート順に全ノードを評価し、ComputationResult を返すこと
 - [ ] `getValue()` で AccountCode と Period を指定して計算結果を取得できること
 - [ ] 計算エラー（循環依存等）が ComputationResult.errors に含まれること
 
-### 5.6 Rule 実装（7 種類）
+### 6.6 Rule 実装（7 種類）
 
 - [ ] 全ルールが Rule インターフェースを実装していること
 - [ ] ManualInputRule: 固定値の ConstantNode を返すこと
@@ -101,29 +145,32 @@ Phase 1 の以下のパッケージが実装・テスト済みであること：
 - [ ] SumRule: AccountHierarchy から子科目を取得し、全子科目の AddNode を返すこと
 - [ ] SubtractRule: minuend - subtrahend の SubtractNode を返すこと
 
-### 5.7 テスト
+### 6.7 テスト
 
 - [ ] 各 FormulaNode 具体クラスの `evaluate()` テスト（正常系）
 - [ ] 各ルールの `buildFormulaNode()` が正しいノードツリーを返すことのテスト
 - [ ] DependencyGraph のトポロジカルソートが正しい順序を返すことのテスト
 - [ ] DependencyGraph の循環検出テスト
 - [ ] AstEngine の統合テスト（3〜5 科目 × 2 期間の簡易モデルで計算結果を検証）
+- [ ] 実績値が `compute()` 後も変更されないことのテスト
+- [ ] 予測期間のみにルールが適用されることのテスト
 - [ ] 全テストがパスすること
 
-### 5.8 パッケージ構造
+### 6.8 パッケージ構造
 
 - [ ] computation パッケージが account, period, money, rule を参照すること
 - [ ] rule パッケージが account, period, money を参照すること
 - [ ] 上記以外のパッケージ参照方向違反がないこと
 - [ ] computation パッケージと rule パッケージに index.ts でエクスポートが定義されていること
 
-## 6. 制約事項
+## 7. 制約事項
 
 - TypeScript strict モードで実装
 - ドメイン層はフレームワーク非依存（Prisma, Hono, React 等に依存しない）
 - 全値オブジェクトは不変（readonly + Object.freeze）
 - コレクションは ReadonlyMap / readonly 配列で公開
 - `docs/functional-design.md` セクション 4.5〜4.6 の型定義に準拠
+- 実績値は計算エンジンによって上書きされてはならない（ConstantNode で保護）
 
 ---
 
