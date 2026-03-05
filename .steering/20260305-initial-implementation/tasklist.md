@@ -16,11 +16,11 @@
 
 ### 1.1 プロジェクト初期設定
 
-- [ ] monorepo 構成のセットアップ（package.json, tsconfig）
-- [ ] `packages/domain/` ディレクトリ作成
-- [ ] テストフレームワーク（Vitest）の導入
-- [ ] ESLint + Prettier の設定
-- [ ] パッケージ参照方向の ESLint ルール設定
+- [x] monorepo 構成のセットアップ（package.json, tsconfig）
+- [x] `packages/domain/` ディレクトリ作成
+- [x] テストフレームワーク（Vitest）の導入
+- [x] ESLint + Prettier の設定
+- [x] パッケージ参照方向の ESLint ルール設定
 
 ### 1.2 account パッケージ
 
@@ -39,15 +39,15 @@
 | 9 | `account/index.ts` | — | パッケージのエクスポート |
 
 タスク:
-- [ ] AccountCode を実装（private constructor, static of, equals, Object.freeze）
-- [ ] AccountCode のテストを作成
-- [ ] AccountName を実装
-- [ ] AccountType を定義
-- [ ] Account エンティティを実装（create, isRoot, belongsTo）
-- [ ] Account のテストを作成
-- [ ] AccountHierarchy を実装（build, detectCycle, getChildren, getLeaves, getByType, getDepth, toSorted）
-- [ ] AccountHierarchy のテストを作成（正常系 + 循環参照検出）
-- [ ] account パッケージの index.ts でエクスポート
+- [x] AccountCode を実装（private constructor, static of, equals, Object.freeze）
+- [x] AccountCode のテストを作成
+- [x] AccountName を実装
+- [x] AccountType を定義
+- [x] Account エンティティを実装（create, isRoot, belongsTo）
+- [x] Account のテストを作成
+- [x] AccountHierarchy を実装（build, detectCycle, getChildren, getLeaves, getByType, getDepth, toSorted）
+- [x] AccountHierarchy のテストを作成（正常系 + 循環参照検出）
+- [x] account パッケージの index.ts でエクスポート
 
 ### 1.3 money パッケージ
 
@@ -64,13 +64,13 @@
 | 7 | `money/index.ts` | — | エクスポート |
 
 タスク:
-- [ ] Money を実装（of, zero, add, subtract, multiply, negate, toDisplay）
-- [ ] Money のテストを作成
-- [ ] GrowthRate を実装（of, apply, toPercentString）
-- [ ] GrowthRate のテストを作成
-- [ ] Ratio を実装（of, apply, toPercentString）
-- [ ] Ratio のテストを作成
-- [ ] money パッケージの index.ts でエクスポート
+- [x] Money を実装（of, zero, add, subtract, multiply, negate, toDisplay）
+- [x] Money のテストを作成
+- [x] GrowthRate を実装（of, apply, toPercentString）
+- [x] GrowthRate のテストを作成
+- [x] Ratio を実装（of, apply, toPercentString）
+- [x] Ratio のテストを作成
+- [x] money パッケージの index.ts でエクスポート
 
 ### 1.4 period パッケージ
 
@@ -87,18 +87,18 @@
 | 7 | `period/index.ts` | — | エクスポート |
 
 タスク:
-- [ ] Period を実装（of, next, prev, equals, toLabel, compareTo）
-- [ ] Period のテストを作成
-- [ ] FiscalYearSetting を実装（of, getStartMonth, isActualPeriod, isForecastPeriod）
-- [ ] FiscalYearSetting のテストを作成
-- [ ] Periods を実装（generate, getAll, getActuals, getForecasts, getLabels）
-- [ ] Periods のテストを作成
-- [ ] period パッケージの index.ts でエクスポート
+- [x] Period を実装（of, next, prev, equals, toLabel, compareTo）
+- [x] Period のテストを作成
+- [x] FiscalYearSetting を実装（of, getStartMonth, isActualPeriod, isForecastPeriod）
+- [x] FiscalYearSetting のテストを作成
+- [x] Periods を実装（generate, getAll, getActuals, getForecasts, getLabels）
+- [x] Periods のテストを作成
+- [x] period パッケージの index.ts でエクスポート
 
 ### 1.5 Phase 1 検証
 
-- [ ] 全テスト実行（`vitest run`）して全パス
-- [ ] パッケージ間の依存方向が正しいこと（ESLint で確認）
+- [x] 全テスト実行（`vitest run`）して全パス
+- [x] パッケージ間の依存方向が正しいこと（ESLint で確認）
 
 ---
 
