@@ -9,8 +9,10 @@
 
 | ファイル | 変更種別 | 概要 |
 |---|---|---|
-| `packages/domain/src/account/Account.ts` | 修正 | `isStructural` プロパティ追加 |
-| `packages/domain/src/account/Account.test.ts` | 修正 | `isStructural` のテスト追加 |
+| `packages/domain/src/account/AccountSide.ts` | 新規 | `AccountSide` 型定義 |
+| `packages/domain/src/account/Account.ts` | 修正 | `isStructural`, `side` プロパティ追加 |
+| `packages/domain/src/account/Account.test.ts` | 修正 | `isStructural`, `side` のテスト追加 |
+| `packages/domain/src/account/index.ts` | 修正 | `AccountSide` のエクスポート追加 |
 | `packages/domain/src/account/AccountHierarchy.ts` | 修正 | `insertParentAbove()`, `addChildrenTo()` 追加 |
 | `packages/domain/src/account/AccountHierarchy.test.ts` | 修正 | 新メソッドのテスト追加 |
 | `docs/functional-design.md` | 修正 | Account, AccountHierarchy のクラス設計更新 |
@@ -19,9 +21,33 @@
 
 ## 2. 実装アプローチ
 
-### 2.1 Account への `isStructural` フラグ追加
+### 2.1 `AccountSide` 型の追加
 
-`Account` クラスに `isStructural: boolean` を追加する。既存の `create()` ファクトリメソッドのパラメータに追加し、デフォルト値は `false` とする。
+借方/貸方を表す Union 型を新規ファイルとして追加する。
+
+```typescript
+// AccountSide.ts
+export type AccountSide = "DEBIT" | "CREDIT";
+```
+
+| AccountType | Side | 例 |
+|---|---|---|
+| PL | CREDIT | 売上高（収益） |
+| PL | DEBIT | 売上原価、販管費（費用） |
+| BS | DEBIT | 現金、固定資産（資産） |
+| BS | CREDIT | 買掛金、借入金（負債）、純資産 |
+| CF | DEBIT | 営業CF増加項目 |
+| CF | CREDIT | 営業CF減少項目 |
+
+`side` から `aggregationSign` を導出できる:
+- `DEBIT` → `+1`（借方増加）
+- `CREDIT` → `-1`（貸方増加）
+
+この値はCF計算（間接法）での符号調整に使用される。
+
+### 2.2 Account への `isStructural` フラグと `side` プロパティ追加
+
+`Account` クラスに `isStructural: boolean` と `side: AccountSide` を追加する。
 
 **変更後の Account:**
 
@@ -30,6 +56,7 @@ class Account {
   readonly code: AccountCode;
   readonly name: AccountName;
   readonly type: AccountType;
+  readonly side: AccountSide;               // ← 追加
   readonly parentCode: AccountCode | null;
   readonly sortOrder: number;
   readonly isStructural: boolean;           // ← 追加
@@ -38,6 +65,7 @@ class Account {
     code: string;
     name: string;
     type: AccountType;
+    side: AccountSide;                      // ← 追加（必須）
     parentCode: string | null;
     sortOrder: number;
     isStructural?: boolean;                 // ← 追加（デフォルト: false）
@@ -45,14 +73,20 @@ class Account {
 
   isRoot(): boolean;
   belongsTo(type: AccountType): boolean;
+
+  // aggregationSign は side から導出
+  get aggregationSign(): 1 | -1;
 }
 ```
 
 **設計ポイント:**
-- `isStructural` は省略可能（`?`）にし、既存の `Account.create()` 呼び出しに影響を与えない
+- `side` は**必須パラメータ**とする（全ての科目が借方/貸方のいずれかに属する）
+- `isStructural` は省略可能（`?`）にし、デフォルト `false`
+- `aggregationSign` は getter として `side` から導出する（保存しない）
 - `Object.freeze(this)` で不変性を保つ（既存パターンと同じ）
+- 既存の `Account.create()` 呼び出しには `side` パラメータの追加が必要（破壊的変更）
 
-### 2.2 Account の `changeParent()` メソッド追加
+### 2.3 Account の `changeParent()` メソッド追加
 
 `insertParentAbove()` の内部で既存 Account の `parentCode` を変更した新しいインスタンスを生成する必要がある。Account はイミュータブルなので、コピーメソッドを追加する。
 
@@ -67,9 +101,9 @@ class Account {
 **設計ポイント:**
 - 構造科目の場合はエラーをスローする（`isStructural === true` の Account は parentCode を変更できない）
 - 新しい Account インスタンスを返す（元のインスタンスは変更しない）
-- `code`, `name`, `type`, `sortOrder`, `isStructural` はそのまま引き継ぐ
+- `code`, `name`, `type`, `side`, `sortOrder`, `isStructural` はそのまま引き継ぐ
 
-### 2.3 AccountHierarchy への変更操作メソッド追加
+### 2.4 AccountHierarchy への変更操作メソッド追加
 
 #### `insertParentAbove()` — 既存科目の上に親科目を挿入
 
@@ -151,7 +185,7 @@ class AccountHierarchy {
 | newChildren の code が重複 | `Account "${code}" already exists` |
 | newChildren の parentCode が targetCode と不一致 | `Child account "${code}" must have parentCode "${targetCode}"` |
 
-### 2.4 不変性の維持パターン
+### 2.5 不変性の維持パターン
 
 全ての変更操作は以下のパターンで不変性を維持する:
 
@@ -177,21 +211,23 @@ class AccountHierarchy {
 
 ### 3.1 既存コードへの影響
 
-- **Account.create()**: `isStructural` パラメータの追加（省略可能なため既存呼び出しに影響なし）
+- **Account.create()**: `side`（必須）と `isStructural`（省略可能）パラメータの追加
 - **AccountHierarchy.build()**: 変更なし
-- **既存テスト**: `Account.create()` に `isStructural` を渡していないものはデフォルト `false` で動作（影響なし）
+- **既存テスト**: `Account.create()` に `side` パラメータの追加が必要（破壊的変更）
+- **既存のシードデータ**: 各科目に `side` の指定が必要
 
 ### 3.2 上流パッケージへの影響
 
 `account` パッケージは最上流であり、`period`, `rule`, `computation`, `statement` から参照されている。
 
+- `Account` への `side` 追加は既存呼び出しに `side` パラメータの追加が必要（破壊的変更）
 - `Account` への `isStructural` 追加は既存のインターフェースを壊さない（オプショナルパラメータ）
 - `AccountHierarchy` への新メソッド追加は既存メソッドに影響しない
 - 上流パッケージの変更は不要
 
 ### 3.3 DB スキーマへの影響
 
-`accounts` テーブルに `is_structural BOOLEAN DEFAULT FALSE` カラムの追加が必要になるが、これは本タスクのスコープ外とする（ドメインモデル層のみ対応）。
+`accounts` テーブルに `side TEXT NOT NULL` と `is_structural BOOLEAN DEFAULT FALSE` カラムの追加が必要になるが、これは本タスクのスコープ外とする（ドメインモデル層のみ対応）。
 
 ---
 
@@ -201,6 +237,8 @@ class AccountHierarchy {
 
 | テストケース | 期待結果 |
 |---|---|
+| `side: "DEBIT"` で作成 | `account.side === "DEBIT"`, `account.aggregationSign === 1` |
+| `side: "CREDIT"` で作成 | `account.side === "CREDIT"`, `account.aggregationSign === -1` |
 | `isStructural: true` で作成 | `account.isStructural === true` |
 | `isStructural` 省略で作成 | `account.isStructural === false` |
 | 構造科目に `changeParent()` | エラースロー |

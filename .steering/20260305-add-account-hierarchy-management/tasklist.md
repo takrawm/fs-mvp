@@ -5,21 +5,30 @@
 
 ---
 
-## Phase 1: Account への isStructural フラグ追加
+## Phase 1: Account への side / isStructural 追加
 
-- [ ] 1-1. `Account.ts` に `isStructural: boolean` プロパティを追加
+- [ ] 1-1. `AccountSide.ts` を新規作成
+  - `type AccountSide = "DEBIT" | "CREDIT"` を定義
+  - `index.ts` にエクスポートを追加
+- [ ] 1-2. `Account.ts` に `side: AccountSide` と `isStructural: boolean` を追加
   - コンストラクタパラメータに追加
-  - `create()` のパラメータに `isStructural?: boolean` を追加（デフォルト: `false`）
+  - `create()` のパラメータに `side: AccountSide`（必須）と `isStructural?: boolean`（デフォルト: `false`）を追加
+  - `get aggregationSign(): 1 | -1` ゲッターを追加（`side` から導出）
   - `Object.freeze(this)` で不変性を維持
-- [ ] 1-2. `Account.ts` に `changeParent()` メソッドを追加
+- [ ] 1-3. `Account.ts` に `changeParent()` メソッドを追加
   - `isStructural === true` の場合はエラーをスロー
   - 新しい Account インスタンスを返す
-- [ ] 1-3. `Account.test.ts` にテストを追加
+- [ ] 1-4. 既存の `Account.create()` 呼び出し箇所に `side` パラメータを追加
+  - `Account.test.ts` の既存テスト
+  - `AccountHierarchy.test.ts` の既存テスト
+- [ ] 1-5. `Account.test.ts` に新規テストを追加
+  - `side: "DEBIT"` で `aggregationSign` が `1` になること
+  - `side: "CREDIT"` で `aggregationSign` が `-1` になること
   - `isStructural: true` で作成できること
   - `isStructural` 省略時にデフォルト `false` になること
   - `changeParent()` で新しい Account が返ること
   - 構造科目に `changeParent()` でエラーになること
-- [ ] 1-4. 既存テストが全てパスすることを確認
+- [ ] 1-6. 既存テストが全てパスすることを確認
 
 ## Phase 2: AccountHierarchy に insertParentAbove() を追加
 
@@ -58,6 +67,8 @@
 ## Phase 4: ドキュメント更新
 
 - [ ] 4-1. `docs/functional-design.md` の Account クラス設計を更新
+  - `AccountSide` 型の追記
+  - `side` プロパティ、`aggregationSign` ゲッターの追記
   - `isStructural` プロパティの追記
   - `changeParent()` メソッドの追記
 - [ ] 4-2. `docs/functional-design.md` の AccountHierarchy クラス設計を更新
