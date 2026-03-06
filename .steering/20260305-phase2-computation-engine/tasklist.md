@@ -7,7 +7,7 @@
 
 ## 凡例
 
-- [ ] 未着手
+- [x]未着手
 - [x] 完了
 
 ---
@@ -16,7 +16,7 @@
 
 ### 1.1 EvaluationCache
 
-- [ ] `computation/EvaluationCache.ts` を作成（get, set, has, clear）
+- [x] `computation/EvaluationCache.ts` を作成（get, set, has, clear）
 
 ### 1.2 FormulaNode 階層
 
@@ -28,15 +28,15 @@
 | 2 | `computation/FormulaNode.test.ts` | — | 各ノードの evaluate() テスト |
 
 タスク:
-- [ ] FormulaNode インターフェースを定義（nodeId, evaluate, getDependencies）
-- [ ] FormulaNodeRef インターフェース + FormulaNodeRefImpl を実装
-- [ ] ConstantNode を実装
-- [ ] AddNode を実装
-- [ ] SubtractNode を実装
-- [ ] MultiplyNode を実装
-- [ ] ReferenceNode を実装
-- [ ] NegateNode を実装
-- [ ] 全ノードの evaluate() テストを作成（正常系 + キャッシュヒット）
+- [x]FormulaNode インターフェースを定義（nodeId, evaluate, getDependencies）
+- [x]FormulaNodeRef インターフェース + FormulaNodeRefImpl を実装
+- [x]ConstantNode を実装
+- [x]AddNode を実装
+- [x]SubtractNode を実装
+- [x]MultiplyNode を実装
+- [x]ReferenceNode を実装
+- [x]NegateNode を実装
+- [x]全ノードの evaluate() テストを作成（正常系 + キャッシュヒット）
 
 ---
 
@@ -49,8 +49,8 @@
 | 1 | `computation/NodeRegistry.ts` | FormulaNode, account, period | ノード管理 + ID 生成 |
 
 タスク:
-- [ ] NodeRegistry を実装（register, get, getOrCreate, getAll, has）
-- [ ] `buildNodeId()` を実装（`{accountCode}:{fiscalYear}-{month}`）
+- [x]NodeRegistry を実装（register, get, getOrCreate, getAll, has）
+- [x]`buildNodeId()` を実装（`{accountCode}:{fiscalYear}-{month}`）
 
 ### 2.2 DependencyGraph
 
@@ -60,10 +60,10 @@
 | 2 | `computation/DependencyGraph.test.ts` | — | ソート順・循環エラーのテスト |
 
 タスク:
-- [ ] DependencyGraph.build() を実装（隣接リスト + 入次数マップの構築）
-- [ ] topologicalSort() を実装（Kahn のアルゴリズム）
-- [ ] detectCycle() を実装（未処理ノードから関与する AccountCode を抽出）
-- [ ] テストを作成（正常ソート + 循環検出 + 独立ノード）
+- [x]DependencyGraph.build() を実装（隣接リスト + 入次数マップの構築）
+- [x]topologicalSort() を実装（Kahn のアルゴリズム）
+- [x]detectCycle() を実装（未処理ノードから関与する AccountCode を抽出）
+- [x]テストを作成（正常ソート + 循環検出 + 独立ノード）
 
 ---
 
@@ -75,9 +75,9 @@
 | 2 | `rule/RuleBuildContext.ts` | account, period, computation/FormulaNode | ルール構築コンテキスト |
 
 タスク:
-- [ ] Rule インターフェースを定義（accountCode, ruleType, buildFormulaNode）
-- [ ] RuleType を定義（7 種の union 型）
-- [ ] RuleBuildContext インターフェースを定義（getNodeRef, getHierarchy）
+- [x]Rule インターフェースを定義（accountCode, ruleType, buildFormulaNode）
+- [x]RuleType を定義（7 種の union 型）
+- [x]RuleBuildContext インターフェースを定義（getNodeRef, getHierarchy）
 
 ---
 
@@ -87,42 +87,42 @@
 
 ### 4.1 ManualInputRule
 
-- [ ] ManualInputRule を実装（→ ConstantNode）
-- [ ] ManualInputRule のテストを作成
+- [x]ManualInputRule を実装（→ ConstantNode）
+- [x]ManualInputRule のテストを作成
 
 ### 4.2 GrowthRateRule
 
-- [ ] GrowthRateRule を実装（→ MultiplyNode(prevRef, 1 + rate)）
-- [ ] GrowthRateRule のテストを作成
+- [x]GrowthRateRule を実装（→ MultiplyNode(prevRef, 1 + rate)）
+- [x]GrowthRateRule のテストを作成
 
 ### 4.3 PercentageRule
 
-- [ ] PercentageRule を実装（→ MultiplyNode(baseRef, ratio)）
-- [ ] PercentageRule のテストを作成
+- [x]PercentageRule を実装（→ MultiplyNode(baseRef, ratio)）
+- [x]PercentageRule のテストを作成
 
 ### 4.4 ReferenceRule
 
-- [ ] ReferenceRule を実装（→ ReferenceNode(ref)、期間オフセット対応）
-- [ ] ReferenceRule のテストを作成
+- [x]ReferenceRule を実装（→ ReferenceNode(ref)、期間オフセット対応）
+- [x]ReferenceRule のテストを作成
 
 ### 4.5 BalanceChangeRule
 
-- [ ] BalanceChangeRule を実装（→ AddNode(prevBalanceRef, changeRef)）
-- [ ] BalanceChangeRule のテストを作成
+- [x]BalanceChangeRule を実装（→ AddNode(prevBalanceRef, changeRef)）
+- [x]BalanceChangeRule のテストを作成
 
 ### 4.6 SumRule
 
-- [ ] SumRule を実装（→ AddNode(childRefs)、AccountHierarchy から子科目取得）
-- [ ] SumRule のテストを作成
+- [x]SumRule を実装（→ AddNode(childRefs)、AccountHierarchy から子科目取得）
+- [x]SumRule のテストを作成
 
 ### 4.7 SubtractRule
 
-- [ ] SubtractRule を実装（→ SubtractNode(minuendRef, subtrahendRef)）
-- [ ] SubtractRule のテストを作成
+- [x]SubtractRule を実装（→ SubtractNode(minuendRef, subtrahendRef)）
+- [x]SubtractRule のテストを作成
 
 ### 4.8 エクスポート
 
-- [ ] rule パッケージの index.ts でエクスポート
+- [x]rule パッケージの index.ts でエクスポート
 
 ---
 
@@ -136,33 +136,33 @@
 | 2 | `computation/AstEngine.test.ts` | — | 統合テスト |
 
 タスク:
-- [ ] AstEngine.create() を実装
-- [ ] RuleBuildContext の内部実装を作成
-- [ ] registerRules() を実装（実績値 → ConstantNode、予測期間 → Rule.buildFormulaNode）
-- [ ] compute() を実装（cache.clear → トポロジカルソート → 順次評価 → ComputationResult）
-- [ ] getValue() を実装
-- [ ] ComputationResult / ComputationError インターフェースを定義
+- [x]AstEngine.create() を実装
+- [x]RuleBuildContext の内部実装を作成
+- [x]registerRules() を実装（実績値 → ConstantNode、予測期間 → Rule.buildFormulaNode）
+- [x]compute() を実装（cache.clear → トポロジカルソート → 順次評価 → ComputationResult）
+- [x]getValue() を実装
+- [x]ComputationResult / ComputationError インターフェースを定義
 
 ### 5.2 AstEngine テスト
 
-- [ ] 統合テスト: 簡易モデル（5 科目 × 実績 1 期 + 予測 1 期）で計算結果を検証
-- [ ] 実績値が compute() 後も変更されないことのテスト
-- [ ] 予測期間のみにルールが適用されることのテスト
-- [ ] 循環依存ケースで ComputationResult.errors にエラーが含まれることのテスト
+- [x]統合テスト: 簡易モデル（5 科目 × 実績 1 期 + 予測 1 期）で計算結果を検証
+- [x]実績値が compute() 後も変更されないことのテスト
+- [x]予測期間のみにルールが適用されることのテスト
+- [x]循環依存ケースで ComputationResult.errors にエラーが含まれることのテスト
 
 ### 5.3 エクスポート
 
-- [ ] computation パッケージの index.ts でエクスポート
-- [ ] `packages/domain/src/index.ts` に computation と rule のエクスポートを追加
+- [x]computation パッケージの index.ts でエクスポート
+- [x]`packages/domain/src/index.ts` に computation と rule のエクスポートを追加
 
 ---
 
 ## Step 6: Phase 2 検証
 
-- [ ] 全テスト実行（`vitest run`）して全パス
-- [ ] ESLint エラーなし
-- [ ] TypeScript strict モードでエラーなし
-- [ ] パッケージ間の依存方向が正しいこと
+- [x]全テスト実行（`vitest run`）して全パス
+- [x]ESLint エラーなし
+- [x]TypeScript strict モードでエラーなし
+- [x]パッケージ間の依存方向が正しいこと
 
 ---
 
